@@ -1,10 +1,18 @@
+/* src/app/globals.css */
+
+/* Tailwind v4 */
 @import "tailwindcss";
 
+/* ===== 色トークン（必要なら変更OK） ===== */
 :root {
-  --background: #ffffff;
+  --background: #f7f7f7; /* 画面全体を薄いグレーにしたい場合の基準色 */
   --foreground: #171717;
+  /* セーフエリア（iOSノッチ/ホームバー） */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
 }
 
+/* Tailwind v4 のテーマ変数（フォントなど） */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -12,6 +20,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ダークモード（必要に応じて調整） */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -19,8 +28,62 @@
   }
 }
 
+/* ===== ベース（モバイル最適化） ===== */
+html,
 body {
-  background: var(--background);
+  height: 100%;
+}
+
+body {
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* iOS の勝手な文字サイズ変更を抑止（IME中ズーム防止） */
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+/* 画像/メディアのはみ出し防止（モバイルで必須） */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* iOS のタップ時の青ハイライト無効（UIの違和感軽減） */
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* 入力のフォントサイズ16px以上で iOS の自動ズームを避ける */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* ===== セーフエリア用ユーティリティ ===== */
+.safe-top {
+  padding-top: var(--safe-top);
+}
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* 任意：スムーズスクロール（新規メッセージへの追従などが自然に） */
+:root {
+  scroll-behavior: smooth;
+}
+
+/* 任意：スクロールバー非表示ユーティリティ（デザイン上必要なら） */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
 }

@@ -1,7 +1,14 @@
+// next.config.ts
 import type { NextConfig } from "next";
+import createNextPWA from "@ducanh2912/next-pwa";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const isDev = process.env.NODE_ENV !== "production";
+const withPWA = createNextPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: isDev,
+});
 
-export default nextConfig;
+const nextConfig: NextConfig = {};
+export default withPWA(nextConfig);

@@ -3,25 +3,32 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
+    "dev": "next dev",
+    "dev:check": "node -e \"const fs=require('fs');if(!fs.existsSync('data/embeddings.npz')||!fs.existsSync('data/records.json')){console.error('[ERR] data がありません。pdf 側で rebuild_and_sync を実行して下さい');process.exit(1);}console.log('✅ data チェックOK');\" && next dev",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "eslint"
   },
   "dependencies": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.3"
+    "axios": "^1.12.2",
+    "clsx": "^2.1.1",
+    "csv-parse": "^6.1.0",
+    "jszip": "^3.10.1",
+    "next": "^15.5.3",
+    "openai": "^5.20.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "cross-env": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
