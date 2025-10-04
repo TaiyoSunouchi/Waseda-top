@@ -1,14 +1,9 @@
-// src/app/page.tsx
-import Splash from "./components/Splash";
-import Chat from "./components/Chat";
-
-export default function Page() {
+export default function Home() {
   return (
-    <main className="min-h-dvh">
-      <Splash />   {/* 起動時ロゴ → 自動フェードアウト */}
-      <Chat />     {/* 既存のチャット画面 */}
+    <main style={{padding: '2rem', fontFamily: 'system-ui, sans-serif'}}>
+      <h1>WasedaAI へようこそ</h1>
+      <p>このページが表示されればデプロイ成功です。</p>
+      <p><a href="/history" style={{color:'#2563eb', textDecoration:'underline'}}>履歴ページへ</a></p>
     </main>
   );
 }
-
-
