@@ -6,3 +6,6 @@ dist/
 .env
 .env.*
 .DS_Store
+
+# ignore large faculty rule pdfs
+backend/rag/inputs/faculty_rules_pdfs/
