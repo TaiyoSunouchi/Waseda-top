@@ -1,14 +1,18 @@
 // src/app/history/[id]/page.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type Entry = { id: string; title: string; createdAt: string; session: any };
 
-export default function HistoryDetail({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function HistoryDetail({ params }: { params: Promise<{ id: string }> }) {
+  // ★ Promise になった params を React.use() で unwrap
+  const { id } = use(params);
+  const router = useRouter();
   const [entry, setEntry] = useState<Entry | null>(null);
+  const [restored, setRestored] = useState(false);
 
   useEffect(() => {
     const api = (globalThis as any).wasedaAIHistory;
@@ -16,10 +20,31 @@ export default function HistoryDetail({ params }: { params: { id: string } }) {
     setEntry(e);
   }, [id]);
 
+  useEffect(() => {
+    if (!entry || restored) return;
+
+    try {
+      localStorage.setItem('wasedaai_restore_id', entry.id);
+      localStorage.setItem('wasedaai_current_session_id', entry.id);
+      localStorage.setItem('wasedaai_open_session_id', entry.id);
+      localStorage.setItem('wasedaai_restore_ping', String(Date.now()));
+    } catch {}
+
+    setRestored(true);
+
+    const url = `/?session=${encodeURIComponent(entry.id)}#restore=${encodeURIComponent(entry.id)}`;
+    router.replace(url);
+
+    setTimeout(() => {
+      if (window.location.pathname.startsWith('/history')) {
+        window.location.href = url;
+      }
+    }, 150);
+  }, [entry, restored, router]);
+
   const messages = useMemo(() => {
     const msgs = entry?.session?.messages;
     if (!Array.isArray(msgs)) return null;
-    // 「ようこそメッセージ」を除外（idがsys1 かつ assistant）
     return msgs.filter((m) => !(m?.id === 'sys1' && m?.role === 'assistant'));
   }, [entry]);
 
@@ -37,7 +62,25 @@ export default function HistoryDetail({ params }: { params: { id: string } }) {
   return (
     <main className="mx-auto max-w-3xl p-6 text-black">
       <h1 className="text-2xl font-bold mb-2">{entry.title || '無題'}</h1>
-      <p className="text-sm text-gray-600 mb-6">{new Date(entry.createdAt).toLocaleString()}</p>
+      <p className="text-sm text-gray-600 mb-6">
+        {new Date(entry.createdAt).toLocaleString()}
+      </p>
+
+      <div className="mb-4 rounded border p-3">
+        <p className="text-sm">
+          この履歴のチャットを復元してホームに移動しています…
+          <br />
+          自動で移動しない場合は
+          {' '}
+          <a
+            href={`/?session=${encodeURIComponent(entry.id)}#restore=${encodeURIComponent(entry.id)}`}
+            className="underline"
+          >
+            こちらをクリック
+          </a>
+          してください。
+        </p>
+      </div>
 
       {Array.isArray(messages) ? (
         messages.length === 0 ? (
