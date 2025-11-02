@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import MessageBubble from "./MessageBubble";
+import Splash from "./Splash";
 
 type Role = "user" | "assistant" | "system";
 type Message = { id: string; role: Role; content: string };
@@ -115,11 +116,13 @@ export default function Chat() {
     }
   }, [messages, sessionId]);
 
+  // Chat.tsx 内 askRAG() 関数を修正
   async function askRAG(query: string): Promise<{ answer: string; citations: Citation[] }> {
+    const faculty = localStorage.getItem("selectedFaculty") || "default"; // ← 学部を取得
     const res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, faculty }), // ← 追加
     });
     if (!res.ok) {
       let msg = `HTTP ${res.status}`;
@@ -145,10 +148,16 @@ export default function Chat() {
 
     try {
       const { answer, citations } = await askRAG(q);
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: answer || "（回答が空でした）" }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", content: answer || "（回答が空でした）" },
+      ]);
       setCitations(citations || []);
     } catch (e: any) {
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `エラー: ${e?.message || "ネットワークエラー"}` }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", content: `エラー: ${e?.message || "ネットワークエラー"}` },
+      ]);
     } finally {
       setLoading(false);
       textareaRef.current?.focus();
@@ -161,13 +170,19 @@ export default function Chat() {
     // @ts-ignore
     if ((e.nativeEvent as any).isComposing || isComposing) return;
     const justEnded = Date.now() - lastCompositionEndAt.current < 80;
-    if (justEnded) { e.preventDefault(); return; }
+    if (justEnded) {
+      e.preventDefault();
+      return;
+    }
     e.preventDefault();
     void send();
   };
 
   const onCompositionStart = () => setIsComposing(true);
-  const onCompositionEnd = () => { setIsComposing(false); lastCompositionEndAt.current = Date.now(); };
+  const onCompositionEnd = () => {
+    setIsComposing(false);
+    lastCompositionEndAt.current = Date.now();
+  };
 
   const openHistory = (h: HistoryEntry) => {
     setSelectedHistoryId(h.id);
@@ -205,20 +220,31 @@ export default function Chat() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] h-[100dvh] overflow-hidden px-3 py-3 pt-10  xl:grid xl:grid-cols-[20%_80%] xl:gap-4">
+   <>
+    <Splash /> {/* ← マウント時に表示して1.2秒で勝手に消える */}
+    // ← ここをヘッダー分だけ下げる
+    <div className="fixed top-[56px] left-0 right-0 bottom-0 mx-auto w-full max-w-[1600px] h-[calc(100dvh-56px)] overflow-hidden px-3 py-3 xl:grid xl:grid-cols-[20%_80%] xl:gap-4">
       {/* ===== 左サイド ===== */}
-      <aside className="hidden xl:flex xl:flex-col">
-        <div className="sticky top-3 rounded-2xl border bg-white p-4 shadow-sm">
+      <aside className="hidden xl:flex xl:flex-col h-[calc(100dvh-56px-1.5rem)]">
+        <div className="rounded-2xl border bg-white p-4 shadow-sm mb-4">
           <h2 className="mb-3 text-base font-semibold text-black">メニュー</h2>
           <nav className="grid gap-2 text-sm text-black">
-            <a href="/" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">ホーム</a>
-            <a href="/terms" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">利用規約</a>
-            <a href="/privacy" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">プライバシー</a>
-            <a href="/about" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">WasedaAI について</a>
+            <a href="/" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">
+              ホーム
+            </a>
+            <a href="/terms" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">
+              利用規約
+            </a>
+            <a href="/privacy" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">
+              プライバシー
+            </a>
+            <a href="/about" className="rounded-md px-3 py-2 hover:bg-gray-100 text-black">
+              WasedaAI について
+            </a>
           </nav>
         </div>
 
-        <div className="mt-4 sticky top-[11rem] max-h-[calc(100dvh-12rem)] overflow-y-auto rounded-2xl border bg-white p-4 shadow-sm">
+        <div className="flex-1 overflow-y-auto rounded-2xl border bg-white p-4 shadow-sm">
           <h2 className="mb-3 text-base font-semibold text-black">履歴</h2>
           {histories.length === 0 ? (
             <p className="text-sm text-black">まだ履歴はありません</p>
@@ -262,26 +288,27 @@ export default function Chat() {
                         className="absolute right-0 top-[calc(100%+4px)] z-20 w-auto rounded-xl border border-gray-300 bg-gray-100 shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                       >
-                       <button
-                         type="button"
-                         className="px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-xl"
-                         onClick={() => deleteHistory(h.id)}
-                       >
+                        <button
+                          type="button"
+                          className="px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-xl"
+                          onClick={() => deleteHistory(h.id)}
+                        >
                           消去する
-                       </button>
+                        </button>
                       </div>
                     )}
-
                   </div>
                 </li>
               ))}
             </ul>
           )}
         </div>
+
       </aside>
 
-      <div className="flex min-h-[calc(100dvh-1.5rem)] flex-col rounded-2xl border bg-white">
-        <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 pt-10 space-y-3 pb-[120px]">
+      {/* ===== 右側チャット ===== */}
+      <div className="relative flex min-h-[calc(100dvh-56px-1.5rem)] flex-col rounded-2xl border bg-white">
+        <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 pt-10 space-y-3 pb-[150px]">
           {messages.map((m) => {
             const isUser = m.role === "user";
             const isAssistant = m.role === "assistant";
@@ -289,7 +316,9 @@ export default function Chat() {
             const bubbleBg = isUser ? "bg-blue-200" : isAssistant ? "bg-orange-200" : "bg-gray-200";
             return (
               <div key={m.id} className={`w-full flex ${alignCls}`}>
-                <div className={`max-w-[min(80%,900px)] whitespace-pre-wrap rounded-2xl ${bubbleBg} text-black px-4 py-3 shadow-sm`}>
+                <div
+                  className={`max-w-[min(80%,900px)] whitespace-pre-wrap rounded-2xl ${bubbleBg} text-black px-4 py-3 shadow-sm`}
+                >
                   {m.content}
                 </div>
               </div>
@@ -301,7 +330,12 @@ export default function Chat() {
               {citations.length === 1 ? (
                 <>
                   出典:{" "}
-                  <a className="underline" href={citations[0].source_url || "#"} target="_blank" rel="noreferrer">
+                  <a
+                    className="underline"
+                    href={citations[0].source_url || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {citations[0].name || citations[0].source_url || "(出典URLなし)"}
                   </a>
                 </>
@@ -311,7 +345,12 @@ export default function Chat() {
                   <ul className="list-disc pl-5 space-y-1">
                     {citations.map((c, i) => (
                       <li key={i}>
-                        <a className="underline" href={c.source_url || "#"} target="_blank" rel="noreferrer">
+                        <a
+                          className="underline"
+                          href={c.source_url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           {c.name || c.source_url || "(出典URLなし)"}
                         </a>
                       </li>
@@ -323,8 +362,9 @@ export default function Chat() {
           )}
         </div>
 
-        <div className={"sticky bottom-0 border-t bg-white/95 backdrop-blur px-3 pt-2 pb-3 pl-12 safe-bottom"}>
-          <div className="flex items-end gap-2">
+        {/* 入力欄（右カラムの中でだけ固定・右寄せ） */}
+        <div className="absolute bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur px-3 pt-2 pb-3 safe-bottom flex flex-col gap-1">
+          <div className="ml-auto w-full max-w-[900px] flex items-end gap-2 pr-2">
             <textarea
               ref={textareaRef}
               className="flex-1 resize-none rounded-xl border border-blue-300 px-4 pr-24 py-3 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -333,7 +373,7 @@ export default function Chat() {
               onKeyDown={onKeyDown}
               onCompositionStart={onCompositionStart}
               onCompositionEnd={onCompositionEnd}
-              placeholder="例：春学期で英語で開講される2単位の科目を教えて"
+              placeholder="例：大隈重信先生の明治維新論の授業について教えて"
               rows={2}
             />
             <button
@@ -350,10 +390,11 @@ export default function Chat() {
             </button>
           </div>
           <p className="mt-1 text-[11px] text-gray-500 text-center">
-            WasedaAIの回答は必ずしも正しいとは限りません。重要な情報は確認するようにしてください。
+            WasedaAIの回答は必ずしも正しいとは限りません。重要な情報はシラバスを確認してください。
           </p>
         </div>
       </div>
     </div>
+    </>
   );
 }

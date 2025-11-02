@@ -36,60 +36,73 @@ function hasUserSpeech(session: Session): boolean {
   );
 }
 
+// 先頭のユーザー発話を取り出すヘルパー
+function firstUserText(session: Session): string | null {
+  if (!Array.isArray(session.messages)) return null;
+  const first = session.messages.find(
+    (m) => m.role === 'user' && typeof m.content === 'string'
+  );
+  return first ? (first.content as string).trim() : null;
+}
+
 export default function HistoryBridge() {
   useEffect(() => {
     const api = {
-      /** 履歴一覧：ユーザー発話が無いものは出さない */
       list: () =>
         (loadAll() as Array<{ id: string; title: string; createdAt: string; session: Session }>)
           .filter((e) => hasUserSpeech(e.session)),
 
-      /** idで詳細取得（ユーザー発話が無ければ null 扱い） */
       get: (id: string) => {
         const entry = (loadAll() as any[]).find((e) => e.id === id) || null;
         return entry && hasUserSpeech(entry.session) ? entry : null;
       },
 
-      /** 保存：ユーザー発話が無ければ保存しない（既存があれば削除） */
       save: (session: Session) => {
-        const id = session.id || crypto.randomUUID();
         const entries = loadAll();
-        const others = entries.filter((e: any) => e.id !== id);
 
+        // ① ユーザーが一言も話してないなら保存しない（今までどおり）
         if (!hasUserSpeech(session)) {
-          // ユーザー未発話なら、残さない（既存も掃除）
-          saveAll(others);
+          const cleaned = entries.filter((e: any) => e.id !== session.id);
+          saveAll(cleaned);
           return null;
         }
+
+        // ② 先頭ユーザー発話を基準に「同じチャット」を探す
+        const firstText = firstUserText(session);
+        const sameIdx =
+          firstText != null
+            ? entries.findIndex((e: any) => firstUserText(e.session) === firstText)
+            : -1;
+
+        // ③ ID を決める：既存があればそれを使う
+        const id =
+          session.id ||
+          (sameIdx >= 0 ? entries[sameIdx].id : crypto.randomUUID());
 
         const createdAt =
           entries.find((e: any) => e.id === id)?.createdAt ||
           new Date().toISOString();
 
         const title =
-          session.title ||
-          // タイトル未指定なら最初のユーザー発話から生成
-          (Array.isArray(session.messages)
-            ? (session.messages.find(
-                (m) => m.role === 'user' && typeof m.content === 'string'
-              )?.content as string)?.slice(0, 30) || 'WasedaAI チャット'
-            : 'WasedaAI チャット');
+            session.title ||
+            (firstText ? firstText.slice(0, 30) : 'WasedaAI チャット');
 
         const entry = { id, title, createdAt, session };
+
+        // ④ 既存を消してから先頭に入れる
+        const others = entries.filter((e: any) => e.id !== id);
         saveAll([entry, ...others]);
+
         return id;
       },
 
-      /** 1件削除 */
       remove: (id: string) => {
         const entries = loadAll().filter((e: any) => e.id !== id);
         saveAll(entries);
       },
 
-      /** 全削除 */
       clear: () => localStorage.removeItem(KEY),
 
-      /** （任意）ユーザー未発話の履歴を一括削除 */
       prune: () => {
         const all = loadAll();
         const pruned = all.filter((e: any) => hasUserSpeech(e.session));
@@ -98,10 +111,7 @@ export default function HistoryBridge() {
       },
     };
 
-    // グローバル公開
     (globalThis as any).wasedaAIHistory = api;
-
-    // 起動時に一度だけ、未発話の履歴を整理
     api.prune();
   }, []);
 

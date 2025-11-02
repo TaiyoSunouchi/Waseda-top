@@ -25,12 +25,12 @@ export default function Splash({ duration = 1200 }: Props) {
       <div className="flex flex-col items-center">
         <img
           src="/wasedaai-logo.png"  /* public/wasedaai-logo.png に置いた画像 */
-          alt="WasedaAI"
-          width={220}
-          height={220}
+          alt="早稲田AI研究会"
+          width={300}
+          height={300}
           className="object-contain"
         />
-        <p className="mt-4 text-sm text-gray-500 tracking-wider">WasedaAI</p>
+        <p className="mt-20 text-2xl font-semibold text-gray-900 tracking-wider">早稲田AI研究会</p>
       </div>
     </div>
   );
