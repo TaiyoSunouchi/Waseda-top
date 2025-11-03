@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "wasedaai_pass_ok";
 
 // ここに公開したいパスワードを並べる（あとで増やしてOK）
-const ALLOWED_PASSWORDS = ["wasedaai", "test1234"];
+const ALLOWED_PASSWORDS = ["tanakamikito", "test1234"];
 
 type PasswordGateProps = {
   children: React.ReactNode;
