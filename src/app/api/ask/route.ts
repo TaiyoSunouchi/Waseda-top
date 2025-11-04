@@ -1,9 +1,11 @@
 // src/app/api/ask/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const DIFY_API_URL =
-  process.env.DIFY_API_URL || "https://api.dify.ai/v1/chat-messages";
+// ベースURLだけをenvに入れておけばここで /v1/chat-messages を足す
+const DIFY_API_URL = `${(process.env.DIFY_API_URL || "http://localhost")
+  .replace(/\/$/, "")}/v1/chat-messages`;
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
+
 
 // 学部ごとのキー（あるものだけ .env.local に書いておく）
 const FACULTY_CONFIG: Record<string, { url?: string; key?: string }> = {

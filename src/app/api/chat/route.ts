@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const DIFY_API_URL =
-  process.env.DIFY_API_URL || "https://api.dify.ai/v1/chat-messages";
+  process.env.DIFY_API_URL ;
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
 
 // 学部ごとのキー（あるものだけ書く。ないのは空でOK）
