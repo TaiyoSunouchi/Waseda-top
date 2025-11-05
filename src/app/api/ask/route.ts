@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // ベースURLだけをenvに入れておけばここで /v1/chat-messages を足す
-const DIFY_API_URL = `${(process.env.DIFY_API_URL || "http://localhost")
+const DIFY_API_URL = `${(process.env.DIFY_API_URL || "https://api.dify.ai/v1/chat-messages")
   .replace(/\/$/, "")}/v1/chat-messages`;
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
 
