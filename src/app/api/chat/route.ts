@@ -1,9 +1,11 @@
 // src/app/api/ask/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const DIFY_API_URL =
-  process.env.DIFY_API_URL ;
+// 変更後
+const BASE_DIFY_URL = (process.env.DIFY_API_URL || "http://localhost").replace(/\/$/, "");
+const DIFY_API_URL = `${BASE_DIFY_URL}/v1/chat-messages`;
 const DIFY_API_KEY = process.env.DIFY_API_KEY;
+
 
 // 学部ごとのキー（あるものだけ書く。ないのは空でOK）
 const FACULTY_CONFIG: Record<string, { url?: string; key?: string }> = {
